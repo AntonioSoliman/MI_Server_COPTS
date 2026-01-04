@@ -1,6 +1,5 @@
 // src/services/api.js 
-const API_BASE = 'https://mi-server-copts.vercel.app/api';
-
+const API_BASE = import.meta?.env?.VITE_API_BASE ?? (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : 'https://mi-server-copts.vercel.app/api');
 // --- AUTENTICAZIONE E UTENTI ---
 export const login = (data) => 
   fetch(`${API_BASE}/auth/login`, { 
