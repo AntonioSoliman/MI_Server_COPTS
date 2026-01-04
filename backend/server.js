@@ -71,11 +71,11 @@ app.put('/api/admin/users/:id', async (req, res) => res.json(await User.findById
 app.delete('/api/admin/users/:id', async (req, res) => { await User.findByIdAndDelete(req.params.id); res.json({ ok: true }); });
 
 // --- ROTTE OCCASIONI ---
-app.get('/api/occasioni', async (req, res) => res.json(await Occasione.find()));
-app.get('/api/occasioni/:id', async (req, res) => res.json(await Occasione.findById(req.params.id)));
-app.post('/api/occasioni', async (req, res) => res.json(await new Occasione(req.body).save()));
-app.put('/api/occasioni/:id', async (req, res) => res.json(await Occasione.findByIdAndUpdate(req.params.id, req.body, { new: true })));
-app.delete('/api/occasioni/:id', async (req, res) => { await Occasione.findByIdAndDelete(req.params.id); res.json({ok:true}); });
+app.get('../api/occasioni', async (req, res) => res.json(await Occasione.find()));
+app.get('../api/occasioni/:id', async (req, res) => res.json(await Occasione.findById(req.params.id)));
+app.post('../api/occasioni', async (req, res) => res.json(await new Occasione(req.body).save()));
+app.put('../api/occasioni/:id', async (req, res) => res.json(await Occasione.findByIdAndUpdate(req.params.id, req.body, { new: true })));
+app.delete('../api/occasioni/:id', async (req, res) => { await Occasione.findByIdAndDelete(req.params.id); res.json({ok:true}); });
 
 // --- ROTTE PREGHIERE ---
 app.get('/api/preghiere', async (req, res) => {
