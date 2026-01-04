@@ -1,5 +1,5 @@
 // src/services/api.js 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'https://mi-server-copts.vercel.app';
 
 // --- AUTENTICAZIONE E UTENTI ---
 export const login = (data) => 
