@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start:all": "concurrently \"npm run dev\" \"npm --prefix backend start\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "arabic-persian-reshaper": "^1.0.1",
     "axios": "^1.13.2",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.2",
     "pdfmake": "^0.2.21",
     "react": "^19.2.0",
@@ -25,6 +26,7 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "concurrently": "^8.2.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

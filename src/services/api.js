@@ -18,6 +18,43 @@ export const register = (data) =>
 export const getAllUsers = () => 
   fetch(`${API_BASE}/admin/users`).then(res => res.json());
 
+// --- ADMIN (requires x-admin-key header) ---
+export const adminGetAllUsers = (adminKey) => {
+  const headers = adminKey ? { 'x-admin-key': adminKey } : {};
+  return fetch(`${API_BASE}/admin/users`, { headers, credentials: 'include' }).then(res => res.json());
+}
+
+export const adminGetPending = (adminKey) => {
+  const headers = adminKey ? { 'x-admin-key': adminKey } : {};
+  return fetch(`${API_BASE}/admin/pending`, { headers, credentials: 'include' }).then(res => res.json());
+}
+
+export const adminApproveUser = (id, adminKey) => {
+  const headers = adminKey ? { 'x-admin-key': adminKey } : {};
+  return fetch(`${API_BASE}/admin/users/${id}/approve`, { method: 'PUT', headers, credentials: 'include' }).then(res => res.json());
+}
+
+export const adminRejectUser = (id, adminKey) => {
+  const headers = adminKey ? { 'x-admin-key': adminKey } : {};
+  return fetch(`${API_BASE}/admin/users/${id}/reject`, { method: 'PUT', headers, credentials: 'include' }).then(res => res.json());
+}
+
+export const adminUpdateUser = (id, data, adminKey) => {
+  const headers = { 'Content-Type': 'application/json', ...(adminKey ? { 'x-admin-key': adminKey } : {}) };
+  return fetch(`${API_BASE}/admin/users/${id}`, { method: 'PUT', headers, body: JSON.stringify(data), credentials: 'include' }).then(res => res.json());
+}
+
+export const adminDeleteUser = (id, adminKey) => {
+  const headers = adminKey ? { 'x-admin-key': adminKey } : {};
+  return fetch(`${API_BASE}/admin/users/${id}`, { method: 'DELETE', headers, credentials: 'include' }).then(res => res.json());
+}
+
+export const adminLogin = (password) =>
+  fetch(`${API_BASE}/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }), credentials: 'include' }).then(res => res.json());
+
+export const adminLogout = () =>
+  fetch(`${API_BASE}/admin/logout`, { method: 'POST', credentials: 'include' }).then(res => res.json());
+
 export const updateUser = (id, data) => 
   fetch(`${API_BASE}/admin/users/${id}`, { 
     method: 'PUT', 

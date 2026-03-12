@@ -3,19 +3,63 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 dotenv.config();
 const app = express();
 
 app.use(cors());
+app.use(cookieParser());
+
+// Middleware di autenticazione admin basata su chiave (x-admin-key o Authorization: Bearer <key>)
+const ADMIN_KEY = process.env.ADMIN_KEY || process.env.ADMIN_SECRET || 'dev_admin_key';
+const JWT_SECRET = process.env.JWT_SECRET || ADMIN_KEY;
+if (!process.env.ADMIN_KEY) console.warn('Warning: ADMIN_KEY not set, using default dev key');
+
+function adminAuth(req, res, next) {
+  // 1) header key
+  const headerKey = req.headers['x-admin-key'] || (req.headers['authorization'] && req.headers['authorization'].startsWith('Bearer ') ? req.headers['authorization'].split(' ')[1] : null);
+  if (headerKey && headerKey === ADMIN_KEY) return next();
+  // 2) jwt cookie
+  const token = req.cookies && req.cookies.admin_token;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET);
+      if (payload && payload.admin) return next();
+    } catch (err) {
+      // invalid token
+    }
+  }
+  return res.status(401).json({ error: 'Admin authentication required' });
+  next();
+}
 
 // MODIFICA CRITICA: Aumentiamo il limite del body parser per accettare immagini Base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('DB connesso con successo'))
-  .catch(err => console.error('Errore connessione DB:', err));
+// Connessione al DB: se MONGO_URI non è impostato, usiamo un MongoDB in-memory per sviluppo
+async function connectDB() {
+  try {
+    if (process.env.MONGO_URI) {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log('DB connesso con successo (MONGO_URI)');
+    } else {
+      // fallback in-memory (sviluppo)
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const mongod = await MongoMemoryServer.create();
+      const uri = mongod.getUri();
+      await mongoose.connect(uri);
+      console.log('DB connesso con successo (in-memory)');
+    }
+  } catch (err) {
+    console.error('Errore connessione DB:', err);
+    process.exit(1);
+  }
+}
+
+connectDB();
 
 // --- SCHEMI ---
 const Occasione = mongoose.model('Occasione', new mongoose.Schema({ titolo: String, imageUrl: String }));
@@ -66,9 +110,40 @@ app.post('/api/auth/login', async (req, res) => {
   } else { res.status(401).json({ error: "Credenziali errate" }); }
 });
 
-app.get('/api/admin/users', async (req, res) => res.json(await User.find({ username: { $ne: 'AdMiN' } })));
-app.put('/api/admin/users/:id', async (req, res) => res.json(await User.findByIdAndUpdate(req.params.id, req.body, { new: true })));
-app.delete('/api/admin/users/:id', async (req, res) => { await User.findByIdAndDelete(req.params.id); res.json({ ok: true }); });
+// ROTTE ADMIN (protette da adminAuth)
+app.get('/api/admin/users', adminAuth, async (req, res) => res.json(await User.find({ username: { $ne: 'AdMiN' } })));
+app.put('/api/admin/users/:id', adminAuth, async (req, res) => res.json(await User.findByIdAndUpdate(req.params.id, req.body, { new: true })));
+app.delete('/api/admin/users/:id', adminAuth, async (req, res) => { await User.findByIdAndDelete(req.params.id); res.json({ ok: true }); });
+
+// Endpoint dedicati per approvazione/rifiuto utenti
+app.get('/api/admin/pending', adminAuth, async (req, res) => {
+  res.json(await User.find({ status: 'pending', username: { $ne: 'AdMiN' } }));
+});
+
+app.put('/api/admin/users/:id/approve', adminAuth, async (req, res) => {
+  const user = await User.findByIdAndUpdate(req.params.id, { status: 'active' }, { new: true });
+  res.json({ ok: true, user });
+});
+
+app.put('/api/admin/users/:id/reject', adminAuth, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ ok: true });
+});
+
+// Admin login using ADMIN_KEY -> sets HttpOnly cookie with JWT
+app.post('/api/admin/login', async (req, res) => {
+  const { password } = req.body || {};
+  if (!password || password !== ADMIN_KEY) return res.status(401).json({ error: 'Invalid admin credentials' });
+  const token = jwt.sign({ admin: true }, JWT_SECRET, { expiresIn: '2h' });
+  // set HttpOnly cookie
+  res.cookie('admin_token', token, { httpOnly: true, sameSite: 'lax' });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  res.clearCookie('admin_token');
+  res.json({ ok: true });
+});
 
 // --- ROTTE OCCASIONI ---
 app.get('/api/occasioni', async (req, res) => res.json(await Occasione.find()));

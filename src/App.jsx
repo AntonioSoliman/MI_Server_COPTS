@@ -8,6 +8,7 @@ import CantiList from './components/CantiList';
 import StrofeList from './components/StrofeList';
 import Login from './components/Login';
 import AdminPanel from './components/AdminPanel';
+import PendingApprovals from './components/PendingApprovals';
 import PrintWizard from './components/PrintWizard'; // <--- Importa il nuovo Wizard
 
 // --- COMPONENTE RICERCA AGGIORNATO ---
@@ -84,7 +85,10 @@ function HomePage({ user, setUser, onOpenPrint }) { // <--- Aggiunta prop per st
       </div>
       {user ? (
         <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-          {user.role === 'admin' && <button onClick={() => navigate('/admin')} style={btnAdmin}>Admin</button>}
+          {user.role === 'admin' && <>
+            <button onClick={() => navigate('/admin')} style={btnAdmin}>Admin</button>
+            <button onClick={() => navigate('/admin/pending')} style={{...btnAdmin, background: '#27ae60'}}>Approva Utenti</button>
+          </>}
           <button onClick={() => {
             localStorage.removeItem('user');
             setUser(null);
@@ -201,7 +205,8 @@ export default function App() {
                 setUser(u);
               }} />
             } />
-            <Route path="/admin" element={<AdminPanel user={user} />} />
+            <Route path="/admin" element={<AdminPanel user={user} setUser={setUser} />} />
+            <Route path="/admin/pending" element={<PendingApprovals user={user} setUser={setUser} />} />
             <Route path="/archivio" element={<OccasioniList user={user} />} />
             <Route path="/occasione/:occasioneId" element={<PreghiereList user={user} />} />
             <Route path="/preghiera/:preghieraId" element={<CantiList user={user} />} />

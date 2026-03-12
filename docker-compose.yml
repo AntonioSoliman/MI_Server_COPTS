@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=mi_server_copts
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    environment:
+      - NODE_ENV=production
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+
+  frontend:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+    driver: local
+
+# Avviare l'intero stack (build e run):
+# docker-compose up --build -d
+# Se preferisci usare i container solo per il DB, imposta backend/.env con MONGO_URI e avvia il frontend in locale.
