@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AdminPanel({ user, setUser }) {
   const [users, setUsers] = useState([]);
-  const [adminKey, setAdminKey] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const navigate = useNavigate();
@@ -19,20 +18,21 @@ export default function AdminPanel({ user, setUser }) {
 
   useEffect(() => {
     if (!user || user.role !== 'admin') return navigate('/');
+    // if the logged-in user is admin, consider admin-authenticated for admin API actions
+    if (user && user.role === 'admin') setAdminAuthenticated(true);
   }, []);
 
   const load = async () => {
-    // if adminKey provided (legacy), use it; otherwise rely on cookie JWT
-    if (!adminKey && !adminAuthenticated) return setUsers([]);
-    const list = await adminGetAllUsers(adminKey || undefined);
+    if (!adminAuthenticated) return setUsers([]);
+    const list = await adminGetAllUsers();
     setUsers(list || []);
   };
 
   // Do not auto-load; require admin to enter key and click
 
   const loadPending = async () => {
-    if (!adminKey && !adminAuthenticated) return;
-    const list = await adminGetPending(adminKey || undefined);
+    if (!adminAuthenticated) return;
+    const list = await adminGetPending();
     setUsers(list || []);
   };
 
@@ -56,17 +56,17 @@ export default function AdminPanel({ user, setUser }) {
   };
 
   const handleAction = async (id, data) => {
-    await adminUpdateUser(id, data, adminKey);
+    await adminUpdateUser(id, data);
     load();
   };
 
   const handleApprove = async (id) => {
-    await adminApproveUser(id, adminKey);
+    await adminApproveUser(id);
     loadPending();
   };
 
   const handleReject = async (id) => {
-    await adminRejectUser(id, adminKey);
+    await adminRejectUser(id);
     loadPending();
   };
 
@@ -123,7 +123,7 @@ export default function AdminPanel({ user, setUser }) {
             )}
 
             {/* ELIMINAZIONE */}
-            <button onClick={() => { if(window.confirm("Eliminare l'utente?")) adminDeleteUser(u._id, adminKey).then(load) }} style={{ color: 'red', cursor: 'pointer' }}>Elimina</button>
+            <button onClick={() => { if(window.confirm("Eliminare l'utente?")) adminDeleteUser(u._id).then(load) }} style={{ color: 'red', cursor: 'pointer' }}>Elimina</button>
           </div>
         </div>
       ))}

@@ -9,7 +9,20 @@ const jwt = require('jsonwebtoken');
 dotenv.config();
 const app = express();
 
-app.use(cors());
+// CORS: allow credentials from the frontend origin (avoid wildcard when using credentials)
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
+// If FRONTEND_ORIGIN is set, only allow that origin; otherwise echo the request origin
+// (this avoids forcing `localhost` and lets same-origin or proxied requests work).
+if (FRONTEND_ORIGIN) {
+  app.use(cors({
+    origin: FRONTEND_ORIGIN,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'],
+    methods: ['GET','POST','PUT','DELETE','OPTIONS']
+  }));
+} else {
+  app.use(cors({ origin: true, credentials: true, allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'], methods: ['GET','POST','PUT','DELETE','OPTIONS'] }));
+}
 app.use(cookieParser());
 
 // Middleware di autenticazione admin basata su chiave (x-admin-key o Authorization: Bearer <key>)

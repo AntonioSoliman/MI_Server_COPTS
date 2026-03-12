@@ -12,33 +12,51 @@ export default function PendingApprovals({ user, setUser }) {
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       navigate('/');
+      return;
     }
+    // Try to load pending users on mount - will succeed if admin cookie present
+    load();
   }, [user]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    if (setUser) setUser(null);
-    navigate('/');
-  };
+    const handleLogout = async () => {
+      await handleAdminLogout();
+      localStorage.removeItem('user');
+      if (setUser) setUser(null);
+      navigate('/');
+    };
 
   const load = async () => {
-    if (!adminKey && !adminAuthenticated) return setPending([]);
-    try {
-      const list = await adminGetPending(adminKey || undefined);
-      setPending(list || []);
+      if (!adminAuthenticated) {
+      setPending([]);
+      return;
+    }
+      try {
+        const list = await adminGetPending();
+      if (!Array.isArray(list)) {
+        console.warn('adminGetPending returned non-array', list);
+        setPending([]);
+        return;
+      }
+      setPending(list);
     } catch (err) {
-      console.error(err);
+      console.error('Errore caricamento pending:', err);
+      if (err && err.status === 401) {
+        // not authenticated -> show login
+        setAdminAuthenticated(false);
+        setPending([]);
+        return;
+      }
       setPending([]);
     }
   };
 
   const approve = async (id) => {
-    await adminApproveUser(id, adminKey || undefined);
+    await adminApproveUser(id);
     load();
   };
 
   const reject = async (id) => {
-    await adminRejectUser(id, adminKey || undefined);
+    await adminRejectUser(id);
     load();
   };
 
@@ -71,8 +89,10 @@ export default function PendingApprovals({ user, setUser }) {
 
       <h1>Utenti in attesa di approvazione</h1>
       <div style={{ marginBottom: 12 }}>
-        <input placeholder="Admin key" value={adminKey} onChange={e => setAdminKey(e.target.value)} style={{ padding: '8px', marginRight: '8px' }} />
-        <button onClick={load} style={{ marginRight: 6 }}>Carica In Attesa</button>
+          <input placeholder="Password admin" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} style={{ padding: '8px', marginRight: '8px' }} />
+          <button onClick={handleAdminLogin} style={{ marginRight: 6 }}>Login Admin (cookie)</button>
+          <button onClick={handleAdminLogout} style={{ marginRight: 6 }}>Logout Admin</button>
+          <button onClick={load} style={{ marginLeft: 8 }}>Carica In Attesa</button>
       </div>
       {pending.length === 0 && <p>Nessun utente in attesa.</p>}
       {pending.map(u => (

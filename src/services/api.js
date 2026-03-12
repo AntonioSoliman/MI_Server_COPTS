@@ -1,5 +1,6 @@
 // src/services/api.js 
-const API_BASE = import.meta?.env?.VITE_API_BASE ?? (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : 'https://mi-server-copts.vercel.app/api');
+// Prefer explicit VITE_API_BASE, otherwise use a relative `/api` so we avoid hard-coded localhost
+const API_BASE = import.meta?.env?.VITE_API_BASE ?? '/api';
 // --- AUTENTICAZIONE E UTENTI ---
 export const login = (data) => 
   fetch(`${API_BASE}/auth/login`, { 
@@ -21,22 +22,58 @@ export const getAllUsers = () =>
 // --- ADMIN (requires x-admin-key header) ---
 export const adminGetAllUsers = (adminKey) => {
   const headers = adminKey ? { 'x-admin-key': adminKey } : {};
-  return fetch(`${API_BASE}/admin/users`, { headers, credentials: 'include' }).then(res => res.json());
+  return fetch(`${API_BASE}/admin/users`, { headers, credentials: 'include' }).then(async res => {
+    if (!res.ok) {
+      const body = await res.text();
+      const err = new Error('API error');
+      err.status = res.status;
+      err.body = body;
+      throw err;
+    }
+    return res.json();
+  });
 }
 
 export const adminGetPending = (adminKey) => {
   const headers = adminKey ? { 'x-admin-key': adminKey } : {};
-  return fetch(`${API_BASE}/admin/pending`, { headers, credentials: 'include' }).then(res => res.json());
+  return fetch(`${API_BASE}/admin/pending`, { headers, credentials: 'include' }).then(async res => {
+    if (!res.ok) {
+      const body = await res.text();
+      const err = new Error('API error');
+      err.status = res.status;
+      err.body = body;
+      throw err;
+    }
+    return res.json();
+  });
 }
 
 export const adminApproveUser = (id, adminKey) => {
   const headers = adminKey ? { 'x-admin-key': adminKey } : {};
-  return fetch(`${API_BASE}/admin/users/${id}/approve`, { method: 'PUT', headers, credentials: 'include' }).then(res => res.json());
+  return fetch(`${API_BASE}/admin/users/${id}/approve`, { method: 'PUT', headers, credentials: 'include' }).then(async res => {
+    if (!res.ok) {
+      const body = await res.text();
+      const err = new Error('API error');
+      err.status = res.status;
+      err.body = body;
+      throw err;
+    }
+    return res.json();
+  });
 }
 
 export const adminRejectUser = (id, adminKey) => {
   const headers = adminKey ? { 'x-admin-key': adminKey } : {};
-  return fetch(`${API_BASE}/admin/users/${id}/reject`, { method: 'PUT', headers, credentials: 'include' }).then(res => res.json());
+  return fetch(`${API_BASE}/admin/users/${id}/reject`, { method: 'PUT', headers, credentials: 'include' }).then(async res => {
+    if (!res.ok) {
+      const body = await res.text();
+      const err = new Error('API error');
+      err.status = res.status;
+      err.body = body;
+      throw err;
+    }
+    return res.json();
+  });
 }
 
 export const adminUpdateUser = (id, data, adminKey) => {
